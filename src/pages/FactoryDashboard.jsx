@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { Users, Droplets, TrendingUp, TrendingDown, AlertTriangle, Factory, Calendar, Search, Map as MapIcon, Activity, Leaf, BarChart3, Thermometer, Brain, Zap, Loader2, Clock, MapPin, Ruler, Settings2, Trophy } from 'lucide-react'
+import { Sun, Moon, Users, Droplets, TrendingUp, TrendingDown, AlertTriangle, Factory, Calendar, Search, Map as MapIcon, Activity, Leaf, BarChart3, Thermometer, Brain, Zap, Loader2, Clock, MapPin, Ruler, Settings2, Trophy } from 'lucide-react'
 import talukaStats from '../data/taluka_stats.json'
 import { fetchBatchPredictions, fetchHarvestPredictions } from '../services/yieldPredictionService'
 import { generateRiskAlerts } from '../services/riskAnalysisService'
@@ -56,6 +56,33 @@ const FactoryDashboard = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [factoryName, setFactoryName] = useState('Central Factory Command')
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('agrolytics-theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.remove('light-theme')
+      localStorage.setItem('agrolytics-theme', 'dark')
+    } else {
+      document.body.classList.add('light-theme')
+      localStorage.setItem('agrolytics-theme', 'light')
+    }
+  }, [isDarkMode])
+
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'agrolytics-theme') {
+        setIsDarkMode(e.newValue !== 'light')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
   
   const [selectedTaluka, setSelectedTaluka] = useState('All Regions')
   const [searchTerm, setSearchTerm] = useState('')
@@ -166,6 +193,14 @@ const FactoryDashboard = () => {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <button 
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          style={{ background: 'var(--fd-card-inner-bg)', border: '1px solid var(--fd-border-medium)', color: 'var(--fd-text-main)', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', height: '40px', width: '40px' }}
+          aria-label="Toggle theme"
+          title="Toggle Dark/Light Mode"
+        >
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
         <select className="select-modern" value={selectedTaluka} onChange={(e) => setSelectedTaluka(e.target.value)}>
           <option value="All Regions">🌍 All Regions</option>
           {talukaNames.map(t => <option key={t} value={t}>📍 {t} ({talukaStats[t].fieldCount} fields)</option>)}
@@ -194,13 +229,13 @@ const FactoryDashboard = () => {
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem',
         padding: '0.7rem 1rem', borderRadius: '10px',
-        background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--fd-card-inner-bg-solid)', border: '1px solid rgba(255,255,255,0.06)',
         backdropFilter: 'blur(8px)'
       }}>
         {stats.map((s, i) => (
           <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none', paddingRight: i < stats.length - 1 ? '1rem' : '0.7rem' }}>
             <s.icon size={14} color={s.color} />
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.label}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--fd-text-tertiary)' }}>{s.label}</span>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: s.color }}>{s.value}</span>
           </div>
         ))}
@@ -217,11 +252,11 @@ const FactoryDashboard = () => {
           <div style={{ background: 'rgba(16,185,129,0.1)', padding: '0.5rem', borderRadius: '8px' }}><TrendingUp size={20} color="#10b981" /></div>
         </div>
         <h2 style={{ fontSize: '2.5rem', margin: '0 0 0.3rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {currentData?.avgYield || 0} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>T/Ha</span>
+          {currentData?.avgYield || 0} <span style={{ fontSize: '1rem', color: 'var(--fd-text-muted)' }}>T/Ha</span>
           {yieldTrend === 'up' && <TrendingUp size={20} color="#10b981" />}
           {yieldTrend === 'down' && <TrendingDown size={20} color="#ef4444" />}
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Across {currentData?.fieldCount?.toLocaleString() || 0} historical records</p>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--fd-text-muted)' }}>Across {currentData?.fieldCount?.toLocaleString() || 0} historical records</p>
       </div>
 
       {/* AI Predicted Yield — Phase 2 NEW */}
@@ -239,9 +274,9 @@ const FactoryDashboard = () => {
         ) : currentAI ? (
           <>
             <h2 style={{ fontSize: '2.5rem', margin: '0 0 0.3rem 0', color: '#a78bfa' }}>
-              {currentAI.avgPredicted || '—'} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>T/Ha</span>
+              {currentAI.avgPredicted || '—'} <span style={{ fontSize: '1rem', color: 'var(--fd-text-muted)' }}>T/Ha</span>
             </h2>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>{currentAI.fieldCount || 0} fields predicted • {currentAI.totalPredicted?.toLocaleString() || 0} T total</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--fd-text-muted)' }}>{currentAI.fieldCount || 0} fields predicted • {currentAI.totalPredicted?.toLocaleString() || 0} T total</p>
             {(() => {
               const hist = currentData?.avgYield || 0
               const ai = currentAI.avgPredicted || 0
@@ -257,8 +292,8 @@ const FactoryDashboard = () => {
           </>
         ) : (
           <div style={{ padding: '0.5rem 0' }}>
-            <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>{predictionsError || 'No configured fields to predict'}</p>
-            {aiPredictions && <p style={{ color: '#64748b', fontSize: '0.75rem', margin: '0.3rem 0 0' }}>{aiPredictions.unconfiguredCount || 0} fields need configuration</p>}
+            <p style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.85rem', margin: 0 }}>{predictionsError || 'No configured fields to predict'}</p>
+            {aiPredictions && <p style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.75rem', margin: '0.3rem 0 0' }}>{aiPredictions.unconfiguredCount || 0} fields need configuration</p>}
           </div>
         )}
       </div>
@@ -269,7 +304,7 @@ const FactoryDashboard = () => {
           <span className="card-label">Crop Health (NDVI)</span>
           <div style={{ background: 'rgba(59,130,246,0.1)', padding: '0.5rem', borderRadius: '8px' }}><Activity size={20} color="#3b82f6" /></div>
         </div>
-        <h2 style={{ fontSize: '2.5rem', margin: '0 0 0.3rem 0', color: '#10b981' }}>{currentData?.cropHealth?.excellentPct || 0}% <span style={{ fontSize: '1rem', color: '#94a3b8' }}>Excellent</span></h2>
+        <h2 style={{ fontSize: '2.5rem', margin: '0 0 0.3rem 0', color: '#10b981' }}>{currentData?.cropHealth?.excellentPct || 0}% <span style={{ fontSize: '1rem', color: 'var(--fd-text-muted)' }}>Excellent</span></h2>
         <div className="progress-bar-container" style={{ height: '10px', marginTop: '0.5rem' }}>
           <div style={{ display: 'flex', height: '100%', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ width: `${currentData?.cropHealth?.excellentPct || 0}%`, background: '#10b981' }}></div>
@@ -277,7 +312,7 @@ const FactoryDashboard = () => {
             <div style={{ width: `${currentData?.cropHealth?.poorPct || 0}%`, background: '#ef4444' }}></div>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--fd-text-muted)' }}>
           <span>🟢 {currentData?.cropHealth?.excellentPct}%</span>
           <span>🟡 {currentData?.cropHealth?.moderatePct}%</span>
           <span>🔴 {currentData?.cropHealth?.poorPct}%</span>
@@ -320,29 +355,29 @@ const FactoryDashboard = () => {
           <div className="glass-card" style={{ border: inSeason ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(100,116,139,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
               <span className="card-label">Crushing Season</span>
-              <div style={{ background: inSeason ? 'rgba(59,130,246,0.1)' : 'rgba(100,116,139,0.1)', padding: '0.5rem', borderRadius: '8px' }}><Calendar size={20} color={inSeason ? '#3b82f6' : '#64748b'} /></div>
+              <div style={{ background: inSeason ? 'rgba(59,130,246,0.1)' : 'rgba(100,116,139,0.1)', padding: '0.5rem', borderRadius: '8px' }}><Calendar size={20} color={inSeason ? '#3b82f6' : 'var(--fd-text-tertiary)'} /></div>
             </div>
             {inSeason ? (
               <>
                 <h2 style={{ fontSize: '2.2rem', margin: '0 0 0.3rem 0', color: '#3b82f6' }}>
-                  {remaining} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>Days Left</span>
+                  {remaining} <span style={{ fontSize: '1rem', color: 'var(--fd-text-muted)' }}>Days Left</span>
                 </h2>
                 <div className="progress-bar-container" style={{ height: '8px', marginBottom: '0.5rem' }}>
                   <div style={{ width: `${progressPct}%`, height: '100%', borderRadius: '4px', background: 'linear-gradient(90deg, #3b82f6, #60a5fa)', transition: 'width 0.5s ease' }}></div>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--fd-text-muted)' }}>
                   {progressPct}% complete • Est: {tonnage.toLocaleString()} T • {seasonLabel}
                 </p>
               </>
             ) : (
               <>
-                <h2 style={{ fontSize: '2.2rem', margin: '0 0 0.3rem 0', color: '#64748b' }}>
+                <h2 style={{ fontSize: '2.2rem', margin: '0 0 0.3rem 0', color: 'var(--fd-text-tertiary)' }}>
                   Off-Season
                 </h2>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--fd-text-muted)' }}>
                   Next season starts in <strong style={{ color: '#f59e0b' }}>{remaining} days</strong>
                 </p>
-                <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+                <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: 'var(--fd-text-tertiary)' }}>
                   {seasonLabel} • Oct 15 → Apr 15
                 </p>
               </>
@@ -373,7 +408,7 @@ const FactoryDashboard = () => {
             {Object.entries(varieties).sort(([, a], [, b]) => b - a).map(([variety, avgYield]) => (
               <div key={variety}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.8rem' }}>
-                  <span style={{ color: variety === currentData?.topVariety ? '#10b981' : '#cbd5e1', fontWeight: variety === currentData?.topVariety ? 700 : 400 }}>
+                  <span style={{ color: variety === currentData?.topVariety ? '#10b981' : 'var(--fd-text-secondary)', fontWeight: variety === currentData?.topVariety ? 700 : 400 }}>
                     {variety === currentData?.topVariety ? '⭐ ' : ''}{variety}
                   </span>
                   <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{avgYield} T/Ha</span>
@@ -392,7 +427,7 @@ const FactoryDashboard = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {Object.entries(seasons).sort(([, a], [, b]) => b - a).map(([season, avgYield]) => (
               <div key={season} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ width: '85px', fontSize: '0.8rem', color: season === currentData?.topSeason ? '#f59e0b' : '#cbd5e1', fontWeight: season === currentData?.topSeason ? 700 : 400 }}>
+                <div style={{ width: '85px', fontSize: '0.8rem', color: season === currentData?.topSeason ? '#f59e0b' : 'var(--fd-text-secondary)', fontWeight: season === currentData?.topSeason ? 700 : 400 }}>
                   {season === currentData?.topSeason ? '🏆 ' : ''}{season}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -423,7 +458,7 @@ const FactoryDashboard = () => {
                     <div key={year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '0.2rem' }}>
                       <span style={{ fontSize: '0.65rem', fontWeight: 600, color: isUp ? '#10b981' : '#ef4444' }}>{avgYield}</span>
                       <div style={{ width: '70%', maxWidth: '42px', height: `${barH}px`, background: isUp ? 'linear-gradient(0deg, #10b981, #34d399)' : 'linear-gradient(0deg, #ef4444, #f87171)', borderRadius: '4px 4px 0 0', transition: 'height 0.5s ease' }}></div>
-                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{year}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--fd-text-muted)', marginTop: '2px' }}>{year}</span>
                     </div>
                   )
                 })}
@@ -452,25 +487,25 @@ const FactoryDashboard = () => {
         </div>
         
         {displayQueue.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fd-text-tertiary)' }}>
             {harvestLoading ? 'Calculating optimal harvest dates...' : 'No fields scheduled for harvest. Update planting dates to see predictions.'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             {displayQueue.slice(0, 5).map(item => (
-              <div key={item.fieldId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(15,23,42,0.4)', borderRadius: '8px', borderLeft: `4px solid ${item.urgency === 'critical' ? '#ef4444' : item.urgency === 'high' ? '#f59e0b' : '#10b981'}` }}>
+              <div key={item.fieldId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--fd-card-inner-bg)', borderRadius: '8px', borderLeft: `4px solid ${item.urgency === 'critical' ? '#ef4444' : item.urgency === 'high' ? '#f59e0b' : '#10b981'}` }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.3rem' }}>
-                    <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '1rem' }}>{item.fieldName}</h4>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{item.taluka}</span>
+                    <h4 style={{ margin: 0, color: 'var(--fd-text-main)', fontSize: '1rem' }}>{item.fieldName}</h4>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--fd-text-muted)', background: 'var(--fd-border-light)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{item.taluka}</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>{item.farmerName} • {item.area} Ha • {item.variety}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--fd-text-muted)' }}>{item.farmerName} • {item.area} Ha • {item.variety}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: item.urgency === 'critical' ? '#ef4444' : item.urgency === 'high' ? '#f59e0b' : '#10b981' }}>
                     {item.daysRemaining <= 0 ? 'Ready Now' : `${item.daysRemaining} Days`}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--fd-text-tertiary)', marginTop: '0.2rem' }}>
                     Model: {item.predictedDays} days total • Est: {item.expectedDate}
                   </div>
                 </div>
@@ -478,7 +513,7 @@ const FactoryDashboard = () => {
             ))}
             {displayQueue.length > 5 && (
               <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>+ {displayQueue.length - 5} more fields in queue</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--fd-text-tertiary)' }}>+ {displayQueue.length - 5} more fields in queue</span>
               </div>
             )}
           </div>
@@ -515,22 +550,22 @@ const FactoryDashboard = () => {
               const bg = isCritical ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)'
               
               return (
-                <div key={alert.id} style={{ display: 'flex', gap: '1rem', padding: '1.2rem', background: 'rgba(15,23,42,0.4)', borderRadius: '8px', borderLeft: `4px solid ${color}` }}>
+                <div key={alert.id} style={{ display: 'flex', gap: '1rem', padding: '1.2rem', background: 'var(--fd-card-inner-bg)', borderRadius: '8px', borderLeft: `4px solid ${color}` }}>
                   <div style={{ background: bg, padding: '0.8rem', borderRadius: '8px', height: 'fit-content' }}>
                     <Icon size={24} color={color} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h4 style={{ margin: 0, color: 'var(--fd-text-main)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {alert.title}
-                        {isCritical && <span style={{ fontSize: '0.65rem', background: '#ef4444', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Critical</span>}
+                        {isCritical && <span style={{ fontSize: '0.65rem', background: '#ef4444', color: 'var(--fd-text-main)', padding: '0.1rem 0.4rem', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Critical</span>}
                       </h4>
                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color, background: bg, padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
                         {alert.affectedCount} fields affected
                       </span>
                     </div>
-                    <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem', color: '#cbd5e1', lineHeight: '1.5' }}>{alert.description}</p>
-                    <div style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
+                    <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem', color: 'var(--fd-text-secondary)', lineHeight: '1.5' }}>{alert.description}</p>
+                    <div style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--fd-text-muted)', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--fd-border-light)', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
                       ⚡ <strong>Action:</strong> {alert.action}
                     </div>
                   </div>
@@ -563,16 +598,16 @@ const FactoryDashboard = () => {
             const isTop3 = i < 3
             const isBottom3 = i >= ranked.length - 3
             const barColor = isTop3 ? '#f59e0b' : isBottom3 ? '#ef4444' : '#3b82f6'
-            const bg = isTop3 ? 'rgba(245,158,11,0.08)' : isBottom3 ? 'rgba(239,68,68,0.06)' : 'rgba(15,23,42,0.4)'
+            const bg = isTop3 ? 'rgba(245,158,11,0.08)' : isBottom3 ? 'rgba(239,68,68,0.06)' : 'var(--fd-card-inner-bg)'
             const border = isTop3 ? '1px solid rgba(245,158,11,0.2)' : isBottom3 ? '1px solid rgba(239,68,68,0.15)' : '1px solid rgba(255,255,255,0.05)'
 
             return (
               <div key={t.name} style={{ minWidth: '120px', flex: '0 0 auto', padding: '0.7rem', borderRadius: '8px', background: bg, border, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.3rem' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--fd-text-tertiary)', marginBottom: '0.3rem' }}>
                   {isTop3 ? medals[i] : `#${i + 1}`}
                 </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f8fafc', marginBottom: '0.2rem', whiteSpace: 'nowrap' }}>{t.name}</div>
-                <div style={{ fontSize: '1rem', fontWeight: 700, color: barColor }}>{t.yield} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>T/Ha</span></div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--fd-text-main)', marginBottom: '0.2rem', whiteSpace: 'nowrap' }}>{t.name}</div>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: barColor }}>{t.yield} <span style={{ fontSize: '0.7rem', color: 'var(--fd-text-muted)' }}>T/Ha</span></div>
                 <div className="progress-bar-container" style={{ height: '4px', marginTop: '0.4rem' }}>
                   <div style={{ width: `${(t.yield / maxYield * 100).toFixed(0)}%`, height: '100%', borderRadius: '2px', background: barColor }}></div>
                 </div>
@@ -608,11 +643,11 @@ const FactoryDashboard = () => {
               return (
                 <div key={type}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem' }}>
-                    <span style={{ color: '#cbd5e1' }}>{type}</span>
-                    <span style={{ color: '#94a3b8', fontWeight: 600 }}>{pct}%</span>
+                    <span style={{ color: 'var(--fd-text-secondary)' }}>{type}</span>
+                    <span style={{ color: 'var(--fd-text-muted)', fontWeight: 600 }}>{pct}%</span>
                   </div>
                   <div className="progress-bar-container" style={{ height: '6px' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: soilColors[type] || '#64748b' }}></div>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: soilColors[type] || 'var(--fd-text-tertiary)' }}></div>
                   </div>
                 </div>
               )
@@ -631,11 +666,11 @@ const FactoryDashboard = () => {
               return (
                 <div key={method}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem' }}>
-                    <span style={{ color: '#cbd5e1' }}>{method}</span>
-                    <span style={{ color: '#94a3b8', fontWeight: 600 }}>{pct}%</span>
+                    <span style={{ color: 'var(--fd-text-secondary)' }}>{method}</span>
+                    <span style={{ color: 'var(--fd-text-muted)', fontWeight: 600 }}>{pct}%</span>
                   </div>
                   <div className="progress-bar-container" style={{ height: '6px' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: irrigColors[method] || '#64748b' }}></div>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: irrigColors[method] || 'var(--fd-text-tertiary)' }}></div>
                   </div>
                 </div>
               )
@@ -653,17 +688,17 @@ const FactoryDashboard = () => {
           <Users size={20} color="#a855f7" /> Registered Fields ({filteredFields.length})
         </h3>
         <div style={{ position: 'relative', width: '200px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--fd-text-muted)' }} />
           <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '0.4rem 0.5rem 0.4rem 2rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(15,23,42,0.6)', color: 'white', fontSize: '0.85rem', outline: 'none' }} />
+            style={{ width: '100%', padding: '0.4rem 0.5rem 0.4rem 2rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--fd-card-inner-bg-solid)', color: 'var(--fd-text-main)', fontSize: '0.85rem', outline: 'none' }} />
         </div>
       </div>
       <div style={{ overflowX: 'auto', maxHeight: '350px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '500px' }}>
-          <thead style={{ position: 'sticky', top: 0, background: '#1e293b' }}>
+          <thead style={{ position: 'sticky', top: 0, background: 'var(--fd-table-header-bg)' }}>
             <tr>
               {['Field', 'Farmer', 'Taluka', 'Variety', 'Area', 'AI Yield', 'Harvest ETA'].map(h => (
-                <th key={h} style={{ padding: '0.8rem 0.5rem', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', color: '#cbd5e1' }}>{h}</th>
+                <th key={h} style={{ padding: '0.8rem 0.5rem', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', color: 'var(--fd-text-secondary)' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -672,33 +707,33 @@ const FactoryDashboard = () => {
               const fieldPred = aiPredictions?.fieldPredictions?.[field.id]
               return (
                 <tr key={field.id}>
-                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: '#f8fafc' }}>{field.name}</td>
-                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: '#94a3b8' }}>{field.farmerName}</td>
+                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: 'var(--fd-text-main)' }}>{field.name}</td>
+                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: 'var(--fd-text-muted)' }}>{field.farmerName}</td>
                   <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ background: 'rgba(15,23,42,0.8)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', color: '#94a3b8' }}>{field.taluka}</span>
+                    <span style={{ background: 'var(--fd-card-inner-bg-heavy)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--fd-text-muted)' }}>{field.taluka}</span>
                   </td>
-                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: '#94a3b8' }}>{field.variety}</td>
+                  <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.85rem', color: 'var(--fd-text-muted)' }}>{field.variety}</td>
                   <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#3b82f6', fontWeight: 600, fontSize: '0.85rem' }}>{field.area} Ha</td>
                   <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {predictionsLoading ? (
-                      <span style={{ color: '#64748b', fontSize: '0.8rem' }}>...</span>
+                      <span style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.8rem' }}>...</span>
                     ) : fieldPred ? (
                       <span style={{ color: '#a78bfa', fontWeight: 600, fontSize: '0.85rem' }}>{fieldPred.toFixed(1)} T/Ha</span>
                     ) : (
-                      <span style={{ color: '#475569', fontSize: '0.75rem' }}>—</span>
+                      <span style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.75rem' }}>—</span>
                     )}
                   </td>
                   <td style={{ padding: '0.7rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {harvestLoading ? (
-                      <span style={{ color: '#64748b', fontSize: '0.8rem' }}>...</span>
+                      <span style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.8rem' }}>...</span>
                     ) : (() => {
                       const hq = harvestQueue.find(h => h.fieldId === field.id)
-                      if (!hq) return <span style={{ color: '#475569', fontSize: '0.75rem' }}>—</span>
+                      if (!hq) return <span style={{ color: 'var(--fd-text-tertiary)', fontSize: '0.75rem' }}>—</span>
                       const color = hq.daysRemaining <= 0 ? '#ef4444' : hq.daysRemaining <= 15 ? '#f59e0b' : '#10b981'
                       return (
                         <span style={{ fontSize: '0.8rem', fontWeight: 600, color }}>
                           {hq.daysRemaining <= 0 ? 'Ready Now' : `${hq.daysRemaining}d`}
-                          <span style={{ color: '#64748b', fontWeight: 400, marginLeft: '0.3rem', fontSize: '0.7rem' }}>{hq.expectedDate}</span>
+                          <span style={{ color: 'var(--fd-text-tertiary)', fontWeight: 400, marginLeft: '0.3rem', fontSize: '0.7rem' }}>{hq.expectedDate}</span>
                         </span>
                       )
                     })()}
@@ -707,7 +742,7 @@ const FactoryDashboard = () => {
               )
             })}
             {filteredFields.length === 0 && !loading && (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>No fields found.</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--fd-text-tertiary)' }}>No fields found.</td></tr>
             )}
           </tbody>
         </table>
@@ -723,7 +758,7 @@ const FactoryDashboard = () => {
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
             <Droplets className="spin-slow" size={48} color="#3b82f6" style={{ marginBottom: '1rem' }} />
-            <h3 style={{ color: '#94a3b8' }}>Syncing Factory Command Data...</h3>
+            <h3 style={{ color: 'var(--fd-text-muted)' }}>Syncing Factory Command Data...</h3>
           </div>
         ) : (
           <>
